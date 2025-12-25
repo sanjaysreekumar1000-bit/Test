@@ -1,1 +1,36 @@
 
+name: Build ESP32-S3 Firmware
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install ESP32 core
+        run: |
+          mkdir -p ~/Arduino/hardware/espressif
+          cd ~/Arduino/hardware/espressif
+          git clone https://github.com/espressif/arduino-esp32.git esp32
+          cd esp32
+          git checkout 3.0.0
+          python3 tools/get.py
+
+      - name: Compile for ESP32-S3
+        run: |
+          arduino-cli core install esp32:esp32
+          arduino-cli compile \
+            --fqbn esp32:esp32:esp32s3 \
+            --output-dir build \
+            sketch.ino
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: esp32s3-firmware
+          path: build/*.bin
